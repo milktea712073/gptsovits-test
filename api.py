@@ -945,5 +945,9 @@ async def tts_endpoint(
     return handle(refer_wav_path, prompt_text, prompt_language, text, text_language, cut_punc, top_k, top_p, temperature, speed, inp_refs)
 
 
+import os
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 9880)))
+    port = int(os.getenv("PORT", 8000))  # 默认端口8000
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
