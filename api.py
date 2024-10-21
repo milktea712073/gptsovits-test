@@ -144,6 +144,7 @@ RESP: 无
 import argparse
 import os,re
 import sys
+import io
 
 now_dir = os.getcwd()
 sys.path.append(now_dir)
@@ -172,7 +173,21 @@ from tools.my_utils import load_audio
 import config as global_config
 import logging
 import subprocess
+from fastapi.staticfiles import StaticFiles
+import requests
 
+def load_audio_from_url_or_local(path, sample_rate=16000):
+    # 檢查是否是 URL
+    if path.startswith('http'):
+        response = requests.get(path)
+        response.raise_for_status()  # 確保成功下載音頻數據
+        audio_data = io.BytesIO(response.content)  # 將文件保存到內存
+        audio, sr = librosa.load(audio_data, sr=sample_rate)  # 使用 librosa 從內存中讀取音頻
+    else:
+        # 從本地文件加載音頻
+        audio, sr = librosa.load(path, sr=sample_rate)
+    
+    return audio, sr
 
 class DefaultRefer:
     def __init__(self, path, text, language):
@@ -414,7 +429,7 @@ class DictToAttrRecursive(dict):
 
 
 def get_spepc(hps, filename):
-    audio,_ = librosa.load(filename, int(hps.data.sampling_rate))
+    audio, _ = load_audio_from_url_or_local(filename, int(hps.data.sampling_rate))
     audio = torch.FloatTensor(audio)
     maxx=audio.abs().max()
     if(maxx>1):
@@ -573,7 +588,7 @@ def get_tts_wav(ref_wav_path, prompt_text, prompt_language, text, text_language,
     dtype = torch.float16 if is_half == True else torch.float32
     zero_wav = np.zeros(int(hps.data.sampling_rate * 0.3), dtype=np.float16 if is_half == True else np.float32)
     with torch.no_grad():
-        wav16k, sr = librosa.load(ref_wav_path, sr=16000)
+        wav16k, sr = load_audio_from_url_or_local(ref_wav_path, sample_rate=16000)
         wav16k = torch.from_numpy(wav16k)
         zero_wav_torch = torch.from_numpy(zero_wav)
         if (is_half == True):
@@ -855,6 +870,9 @@ change_gpt_sovits_weights(gpt_path = gpt_path, sovits_path = sovits_path)
 # --------------------------------
 app = FastAPI()
 
+# 挂载静态文件目录，'static' 是文件夹的名称，'/static' 是访问的 URL 前缀
+app.mount("/static", StaticFiles(directory="C:\\Users\\User\\GPT_SoVITS\\output\\slicer_opt\\lu"), name="static")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # 允許所有來源，你可以根據需要修改為特定的來源列表
@@ -948,6 +966,5 @@ async def tts_endpoint(
 import os
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))  # 默认端口8000
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 9880)))
 
