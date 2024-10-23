@@ -871,7 +871,7 @@ change_gpt_sovits_weights(gpt_path = gpt_path, sovits_path = sovits_path)
 app = FastAPI()
 
 # 挂载静态文件目录，'static' 是文件夹的名称，'/static' 是访问的 URL 前缀
-app.mount("/static", StaticFiles(directory="C:\\Users\\User\\GPT_SoVITS\\output\\slicer_opt\\lu"), name="static")
+app.mount("/static", StaticFiles(directory="C:/Users/User/GPT_SoVITS/output/slicer_opt/lu"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -962,9 +962,13 @@ async def tts_endpoint(
 ):
     return handle(refer_wav_path, prompt_text, prompt_language, text, text_language, cut_punc, top_k, top_p, temperature, speed, inp_refs)
 
+@app.get("/static/{filename}")
+async def custom_static(filename: str):
+    file_path = f"C:/Users/User/GPT_SoVITS/output/slicer_opt/lu/{filename}"
+    return FileResponse(file_path, media_type="audio/wav")
 
 import os
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 9880)))
+    uvicorn.run(app, host="192.168.137.1", port=int(os.getenv("PORT", 9880)))
 
