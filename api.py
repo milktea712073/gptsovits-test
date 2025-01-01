@@ -970,5 +970,5 @@ async def custom_static(filename: str):
 import os
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="192.168.137.1", port=int(os.getenv("PORT", 9880)))
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 9880))) #host=172.20.10.2
 
